@@ -22,6 +22,52 @@ using Test
     print(c)
 end
 
+@testset "reorder_circuit" begin
+    c = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    push_gate!(c, [hadamard(1)])
+    push_gate!(c, [control_x(1, 2)])
+    qubit_map = Dict(1=>3, 2=>1)
+    larger_c = get_reordered_circuit(c, qubit_map)
+    @test larger_c.pipeline[1][1] ≈ hadamard(3)
+    @test larger_c.pipeline[2][1] ≈ control_x(3, 1)
+    @test larger_c.qubit_count == 3
+
+    empty_line_c = QuantumCircuit(qubit_count = 4, bit_count = 0)
+    push_gate!(empty_line_c, [hadamard(2), hadamard(3)])
+    new_empty_line_c = get_reordered_circuit(empty_line_c, Dict(2=>1, 1=>2))
+    @test new_empty_line_c.pipeline[1][1] ≈ hadamard(1)
+    @test new_empty_line_c.pipeline[1][2] ≈ hadamard(3)
+    @test new_empty_line_c.qubit_count == 4
+
+    @test_throws ErrorException get_reordered_circuit(c, Dict(1=>2, 2=>2))
+    @test_throws ErrorException get_reordered_circuit(c, Dict(2=>1))
+end
+
+@testset "append_circuit" begin
+    base_circuit = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    push_gate!(base_circuit, [hadamard(1)])
+    circuit_to_append = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    push_gate!(circuit_to_append, [control_x(1, 2)])
+    append!(base_circuit, circuit_to_append, circuit_to_append)
+    @test base_circuit.pipeline[1][1] ≈ hadamard(1)
+    @test base_circuit.pipeline[2][1] ≈ control_x(1, 2)
+    @test base_circuit.pipeline[3][1] ≈ control_x(1, 2)
+
+    too_large_circuit = QuantumCircuit(qubit_count = 3, bit_count = 0)
+    @test_throws ErrorException append!(base_circuit, too_large_circuit)
+end
+
+@testset "get_wider_circuit" begin
+    narrow_circuit = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    push_gate!(narrow_circuit, [hadamard(1)])
+    num_qubits = 3
+    wider_circuit = get_wider_circuit(narrow_circuit, num_qubits)
+    @test wider_circuit.qubit_count == 3
+    @test wider_circuit.pipeline[1][1] ≈ hadamard(1)
+    
+    @test_throws ErrorException get_wider_circuit(narrow_circuit, 1)
+end
+
 @testset "print_circuit" begin
     c = QuantumCircuit(qubit_count = 2, bit_count = 0)
     for i = 1:50
@@ -33,7 +79,6 @@ end
     push_gate!(c, [control_x(9, 10)])
     print(c)
 end
-
 
 @testset "bellstate" begin
 
@@ -53,6 +98,17 @@ end
     @test ("11" in readings)
     @test ~("10" in readings)
     @test ~("01" in readings)
+end
+
+@testset "global_phase" begin
+    circuit = QuantumCircuit(qubit_count=1, bit_count=0)
+    push_gate!(circuit, sigma_x(1))
+    push_gate!(circuit, phase(1))
+    push_gate!(circuit, sigma_x(1))
+    push_gate!(circuit, phase(1))
+    shots = simulate_shots(circuit, 5)
+    @test ("0" in shots)
+    @test ~("1" in shots)
 end
 
 @testset "phase_kickback" begin
@@ -77,4 +133,23 @@ end
 @testset "throw_if_gate_outside_circuit" begin
     c = QuantumCircuit(qubit_count = 2, bit_count = 0)
     @test_throws DomainError push_gate!(c, control_x(1, 3))
+end
+
+@testset "simulate_shots_for_multiple_circuits" begin
+    c1 = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    push_gate!(c1, sigma_x(1))
+
+    c2 = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    push_gate!(c2, sigma_x(2))
+
+    circuit_list = [c1, c2]
+    shots_list = simulate_shots(circuit_list, 5)
+
+    @test fill("10", 5) == shots_list[1]
+    @test fill("01", 5) == shots_list[2]
+
+    shots_list = simulate_shots(circuit_list, [3, 2])
+
+    @test fill("10", 3) == shots_list[1]
+    @test fill("01", 2) == shots_list[2]
 end
