@@ -99,6 +99,7 @@ export
     eye,
     control_z,
     control_x,
+    toffoli,
     STD_GATES,
     PAULI_GATES,
 

@@ -3,6 +3,7 @@ using Test
 
 @testset "push_pop_gate" begin
     c = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    print(c)
     push_gate!(c, [hadamard(1)])
     @test length(c.pipeline) == 1
 
@@ -67,6 +68,17 @@ end
     @test_throws ErrorException get_wider_circuit(narrow_circuit, 1)
 end
 
+@testset "print_circuit" begin
+    c = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    for i = 1:50
+        push_gate!(c, [control_x(1, 2)])
+    end
+    print(c)
+
+    c = QuantumCircuit(qubit_count = 10, bit_count = 0)
+    push_gate!(c, [control_x(9, 10)])
+    print(c)
+end
 
 @testset "bellstate" begin
 

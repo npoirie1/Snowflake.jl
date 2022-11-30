@@ -47,6 +47,13 @@ end
     CZ = control_z(1, 2)
     @test CZ.instruction_symbol == "cz"
 
+    CCX = toffoli(1, 2, 3)
+    @test CCX.instruction_symbol == "ccx"
+    @test CCX*fock(6,8) ≈ fock(7,8)
+    @test CCX*fock(2,8) ≈ fock(2,8)
+    @test CCX*fock(4,8) ≈ fock(4,8)
+    @test toffoli(3, 1, 2)*fock(5,8) ≈ fock(7,8)
+
     ψ_0 = fock(0,2)
     ψ_1 = fock(1,2)
 
@@ -62,8 +69,8 @@ end
 
     x90 = x_90(1)
     @test x90.instruction_symbol == "x_90"
-    @test x90*ψ_0 ≈ -im*ψ_1 
-    @test x90*ψ_1 ≈ -im*ψ_0 
+    @test x90*ψ_0 ≈  rotation_x(1, pi/2)*ψ_0
+    @test x90*ψ_1 ≈ rotation_x(1, pi/2)*ψ_1
 
     r = rotation(1, pi/2, pi/2)
     @test r.instruction_symbol == "r"
@@ -153,7 +160,7 @@ end
 end
 
 @testset "std_gates" begin
-    std_gates = ["x", "y", "z", "s", "t", "i", "h", "cx", "cz", "iswap"]
+    std_gates = ["x", "y", "z", "s", "t", "i", "h", "cx", "cz", "iswap", "ccx"]
     for gate in std_gates
         @test gate in keys(STD_GATES)
     end
