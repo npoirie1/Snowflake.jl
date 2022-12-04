@@ -40,6 +40,7 @@ control_z
 control_x
 iswap
 iswap_dagger
+toffoli
 Base.:*(M::Gate, x::Ket)
 apply_gate!
 get_inverse(gate::Gate)
