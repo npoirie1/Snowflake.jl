@@ -139,9 +139,9 @@ Quantum Circuit Object:
    id: d64381ca-1360-11ed-2fc3-7b86db8b7417 
    qubit_count: 2 
    bit_count: 0 
-q[1]:--H--
+q[1]:──H──
           
-q[2]:--X--
+q[2]:──X──
 
 
 julia> c1 = QuantumCircuit(qubit_count=1, bit_count=0);
@@ -151,7 +151,7 @@ Quantum Circuit Object:
    id: ed46d94e-1360-11ed-3c11-33df7e129e0b 
    qubit_count: 1 
    bit_count: 0 
-q[1]:--X--
+q[1]:──X──
 
 
 julia> c2 = QuantumCircuit(qubit_count=2, bit_count=0);
@@ -161,9 +161,9 @@ Quantum Circuit Object:
    id: fd6df078-1360-11ed-19e5-cf1aa91338b3 
    qubit_count: 2 
    bit_count: 0 
-q[1]:--*--
+q[1]:──*──
        |  
-q[2]:--Z--
+q[2]:──Z──
 
 
 julia> append!(c, c1, c2);
@@ -173,9 +173,9 @@ Quantum Circuit Object:
    id: d64381ca-1360-11ed-2fc3-7b86db8b7417 
    qubit_count: 2 
    bit_count: 0 
-q[1]:--H----X----*--
+q[1]:──H────X────*──
                  |  
-q[2]:--X---------Z--
+q[2]:──X─────────Z──
 
 
 ```
@@ -205,9 +205,9 @@ Quantum Circuit Object:
    id: c6bc82e2-1365-11ed-1a9f-757e431ca715 
    qubit_count: 2 
    bit_count: 0 
-q[1]:--H--
+q[1]:──H──
           
-q[2]:--X--
+q[2]:──X──
 
 
 julia> wider_circuit = get_wider_circuit(c, 3)
@@ -215,11 +215,11 @@ Quantum Circuit Object:
    id: e28ec322-1365-11ed-06e3-ddae6aeb2c36 
    qubit_count: 3 
    bit_count: 0 
-q[1]:--H--
+q[1]:──H──
           
-q[2]:--X--
+q[2]:──X──
           
-q[3]:-----
+q[3]:─────
 
 
 ```
@@ -249,9 +249,9 @@ Quantum Circuit Object:
    id: 5930787e-133c-11ed-3e7c-3701268d56db 
    qubit_count: 2 
    bit_count: 0 
-q[1]:--H--
+q[1]:──H──
           
-q[2]:--X--
+q[2]:──X──
 
 
 julia> new_c = get_reordered_circuit(c, Dict(1=>3))
@@ -259,11 +259,11 @@ Quantum Circuit Object:
    id: 7ff7f0da-1344-11ed-1ab8-03b49d30363b 
    qubit_count: 3 
    bit_count: 0 
-q[1]:-----
+q[1]:─────
           
-q[2]:--X--
+q[2]:──X──
           
-q[3]:--H--
+q[3]:──H──
 
 
 ```
@@ -691,6 +691,57 @@ function simulate_shots(c::QuantumCircuit, shots_count::Int = 100)
 end
 
 """
+    get_inverse(circuit::QuantumCircuit)
+
+Return a `QuantumCircuit` which is the inverse of the input `circuit`.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, rotation_y(1, pi/4));
+
+julia> push_gate!(c, control_x(1, 2))
+Quantum Circuit Object:
+   id: 47ddf072-7293-11ed-3d64-9f4fd1e69575 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──Ry(0.7853981633974483)────*──
+                                 |  
+q[2]:────────────────────────────X──
+                                    
+
+
+
+julia> get_inverse(c)
+Quantum Circuit Object:
+   id: 6153cc20-7293-11ed-37d4-e14a7e7df842 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──*────Ry(-0.7853981633974483)──
+       |                             
+q[2]:──X─────────────────────────────
+                                     
+
+
+
+```
+"""
+function get_inverse(circuit::QuantumCircuit)
+    reverse_pipeline = reverse(circuit.pipeline)
+    inverse_pipeline = Vector{Gate}[]
+    for step in reverse_pipeline
+        inverse_gate_list = Gate[]
+        for gate in step
+            push!(inverse_gate_list, get_inverse(gate))
+        end
+        push!(inverse_pipeline, inverse_gate_list)
+    end
+    return QuantumCircuit(qubit_count=circuit.qubit_count, bit_count=circuit.bit_count,
+        pipeline=inverse_pipeline)
+end
+
+"""
     simulate_shots(circuit_list::Array{QuantumCircuit}, shots_count::Int = 100)
 
 Emulates a quantum computer by running multiple circuits for a given number of shots.
@@ -705,9 +756,9 @@ Quantum Circuit Object:
    id: 1c7b03c6-1441-11ed-0848-515f7dcd57b4 
    qubit_count: 2 
    bit_count: 0 
-q[1]:--H--
+q[1]:──H──
           
-q[2]:-----
+q[2]:─────
 
 
 julia> c2 = Snowflake.QuantumCircuit(qubit_count = 2, bit_count = 0);
@@ -717,9 +768,9 @@ Quantum Circuit Object:
    id: 269e8632-1441-11ed-345c-f3fc87e6a02b 
    qubit_count: 2 
    bit_count: 0 
-q[1]:-----
+q[1]:─────
           
-q[2]:--H--
+q[2]:──H──
 
 
 julia> circuit_list = [c1, c2];

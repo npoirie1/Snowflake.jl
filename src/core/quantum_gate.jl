@@ -219,6 +219,19 @@ S = \\begin{bmatrix}
 phase() = Operator(reshape(Complex.([1.0, 0.0, 0.0, im]), 2, 2))
 
 """
+    phase_dagger()
+
+Return the adjoint phase gate `Operator`, which is defined as:
+```math
+S^\\dagger = \\begin{bmatrix}
+    1 & 0 \\\\
+    0 & -i
+    \\end{bmatrix}.
+```
+"""
+phase_dagger() = Operator(reshape(Complex.([1.0, 0.0, 0.0, -im]), 2, 2))
+
+"""
     pi_8()
 
 Return the `Operator` for the π/8 gate, which is defined as:
@@ -230,6 +243,19 @@ T = \\begin{bmatrix}
 ```
 """
 pi_8() = Operator(reshape(Complex.([1.0, 0.0, 0.0, exp(im*pi/4.0)]), 2, 2))
+
+"""
+    pi_8_dagger()
+
+Return the adjoint `Operator` of the π/8 gate, which is defined as:
+```math
+T^\\dagger = \\begin{bmatrix}
+    1 & 0 \\\\
+    0 & e^{-i\\frac{\\pi}{4}}
+    \\end{bmatrix}.
+```
+"""
+pi_8_dagger() = Operator(reshape(Complex.([1.0, 0.0, 0.0, exp(-im*pi/4.0)]), 2, 2))
 
 """
     eye()
@@ -437,6 +463,25 @@ iswap() = Operator(
 )
 
 """
+    iswap_dagger()
+
+Return the adjoint of the imaginary swap `Operator`, which is defined as:
+```math
+iSWAP^\\dagger = \\begin{bmatrix}
+    1 & 0 & 0 & 0 \\\\
+    0 & 0 & -i & 0 \\\\
+    0 & -i & 0 & 0 \\\\
+    0 & 0 & 0 & 1
+    \\end{bmatrix}.
+```
+"""
+iswap_dagger() = Operator(
+    Complex.(
+        [[1.0, 0.0, 0.0, 0.0] [0.0, 0.0, -im, 0.0] [0.0, -im, 0.0, 0.0] [0.0, 0.0, 0.0, 1.0]],
+    ),
+)
+
+"""
     toffoli()
 
 Return the Toffoli `Operator`, which is defined as:
@@ -495,16 +540,30 @@ hadamard(target) = Gate(["H"], "h", hadamard(), target)
 """
     phase(target)
 
-Return a phase `Gate` (also known as an S `Gate`), which applies the [`phase()`](@ref) `Operator` to the target qubit.
+Return a phase `Gate` (also known as an ``S`` `Gate`), which applies the [`phase()`](@ref) `Operator` to the target qubit.
 """
 phase(target) = Gate(["S"], "s", phase(), target)
 
 """
+    phase_dagger(target)
+
+Return an adjoint phase `Gate` (also known as an ``S^\\dagger`` `Gate`), which applies the [`phase_dagger()`](@ref) `Operator` to the target qubit.
+"""
+phase_dagger(target) = Gate(["S†"], "s_dag", phase_dagger(), target)
+
+"""
     pi_8(target)
 
-Return a π/8 `Gate` (also known as a T `Gate`), which applies the [`pi_8()`](@ref) `Operator` to the `target` qubit.
+Return a π/8 `Gate` (also known as a ``T`` `Gate`), which applies the [`pi_8()`](@ref) `Operator` to the `target` qubit.
 """
 pi_8(target) = Gate(["T"], "t", pi_8(), target)
+
+"""
+    pi_8_dagger(target)
+
+Return an adjoint π/8 `Gate` (also known as a ``T^\\dagger`` `Gate`), which applies the [`pi_8_dagger()`](@ref) `Operator` to the `target` qubit.
+"""
+pi_8_dagger(target) = Gate(["T†"], "t_dag", pi_8_dagger(), target)
 
 """
     x_90(target)
@@ -604,6 +663,16 @@ The corresponding `Operator` is [`iswap()`](@ref).
 iswap(qubit_1, qubit_2) = Gate(["x" "x"], "iswap", iswap(), [qubit_1, qubit_2])
 
 """
+    iswap_dagger(qubit_1, qubit_2)
+
+Return the adjoint imaginary swap `Gate` which applies the adjoint imaginary swap `Operator` to `qubit_1` and `qubit_2.`
+
+The corresponding `Operator` is [`iswap_dagger()`](@ref).
+""" 
+iswap_dagger(qubit_1, qubit_2) = Gate(["x†" "x†"], "iswap_dag", iswap_dagger(),
+    [qubit_1, qubit_2])
+
+"""
     toffoli(control_qubit_1, control_qubit_2, target_qubit)
 
 Return a Toffoli gate (also known as a CCNOT gate) given two control qubits and a `target_qubit`.
@@ -642,6 +711,90 @@ function get_transformed_state(state::Ket, gate::Gate)
     transformed_state = deepcopy(state)
     apply_gate!(transformed_state, gate)
     return transformed_state
+end
+
+"""
+    get_inverse(gate::Gate)
+
+Return a `Gate` which is the inverse of the input `gate`.
+
+# Examples
+```jldoctest
+julia> u = universal(1, -pi/2, pi/3, pi/4)
+Gate Object:
+instruction symbol: u
+parameters: [-1.5707963267948966, 1.0471975511965976, 0.7853981633974483]
+targets: [1]
+operator:
+(2, 2)-element Snowflake.Operator:
+Underlying data Matrix{Complex}:
+0.7071067811865476 + 0.0im    0.5 + 0.4999999999999999im
+-0.3535533905932738 - 0.6123724356957945im    -0.18301270189221924 + 0.6830127018922194im
+
+
+julia> get_inverse(u)
+Gate Object:
+instruction symbol: u
+parameters: [1.5707963267948966, -0.7853981633974483, -1.0471975511965976]
+targets: [1]
+operator:
+(2, 2)-element Snowflake.Operator:
+Underlying data Matrix{Complex}:
+0.7071067811865476 + 0.0im    -0.3535533905932738 + 0.6123724356957945im
+0.5 - 0.4999999999999999im    -0.18301270189221924 - 0.6830127018922194im
+
+
+```
+"""
+function get_inverse(gate::Gate)
+    if ishermitian(gate.operator)
+        return gate
+    end
+    sym = gate.instruction_symbol
+    if sym == "rx"
+        return rotation_x(gate.target[1], -gate.parameters[1])
+    elseif sym == "ry"
+        return rotation_y(gate.target[1], -gate.parameters[1])
+    elseif sym == "rz"
+        return rotation_z(gate.target[1], -gate.parameters[1])
+    elseif sym == "p"
+        return phase_shift(gate.target[1], -gate.parameters[1])
+    elseif sym == "x_90"
+        return rotation_x(gate.target[1], -pi/2)
+    elseif sym == "s"
+        return phase_dagger(gate.target[1])
+    elseif sym == "s_dag"
+        return phase(gate.target[1])
+    elseif sym == "t"
+        return pi_8_dagger(gate.target[1])
+    elseif sym == "t_dag"
+        return pi_8(gate.target[1])
+    elseif sym == "iswap"
+        return iswap_dagger(gate.target[1], gate.target[2])
+    elseif sym == "iswap_dag"
+        return iswap(gate.target[1], gate.target[2])
+    elseif sym == "r"
+        return rotation(gate.target[1], -gate.parameters[1], gate.parameters[2])
+    elseif sym == "u"
+        return universal(gate.target[1], -gate.parameters[1], -gate.parameters[3],
+            -gate.parameters[2])
+    else
+        throw(ErrorException("no adjoint is available for the $sym gate"))
+    end
+end
+
+function get_inverse_rotation_gate(gate::Gate)
+    new_operator = gate.operator'
+    new_parameters = [-gate.parameters[1], gate.parameters[2]]
+    return Gate(gate.display_symbol, gate.instruction_symbol, new_operator, gate.target,
+        new_parameters)
+end
+
+function get_inverse_universal_gate(gate::Gate)
+    new_operator = gate.operator'
+    new_parameters = [-gate.parameters[1], -gate.parameters[3], -gate.parameters[2]]
+    return Gate(gate.display_symbol, gate.instruction_symbol, new_operator, gate.target,
+        new_parameters)
 end
 
 STD_GATES = Dict(
