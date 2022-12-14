@@ -8,14 +8,13 @@ module Snowflake
 using Base: String
 using Plots: size
 using LinearAlgebra
+using Parameters
 using StatsBase
 using UUIDs
 using Parameters
 using Printf
 using Plots
 import SparseArrays
-
-
 
 export
 
@@ -27,6 +26,8 @@ export
     QuantumCircuit,
     Gate,
     QPU,
+    CliffordOperator,
+    PauliGroupElement,
     BlochSphere,
     AnimatedBlochSphere,
 
@@ -41,6 +42,7 @@ export
     create,
     destroy,
     number_op,
+    ishermitian,
     eigen,
     ket2dm,
     fock_dm,
@@ -53,8 +55,11 @@ export
     sesolve,
     mesolve,
     tr,
+    get_inverse,
     push_gate!,
     pop_gate!,
+    get_wider_circuit,
+    get_reordered_circuit,
     simulate,
     simulate_shots,
     get_gate_counts,
@@ -70,6 +75,12 @@ export
     is_circuit_native_on_qpu,
     does_circuit_satisfy_qpu_connectivity,
     transpile,
+
+
+    get_clifford_operator,
+    get_random_clifford,
+    get_pauli_group_element,
+    push_clifford!,
 
     apply_gate!,
 
@@ -88,14 +99,25 @@ export
     phase_shift,
     universal,
     iswap,
+    iswap_dagger,
     pi_8,
+    pi_8_dagger,
     phase,
+    phase_dagger,
     eye,
     control_z,
     control_x,
     toffoli,
     STD_GATES,
     PAULI_GATES,
+
+    # Benchmarking
+    RandomizedBenchmarkingProperties,
+    RandomizedBenchmarkingFitProperties,
+    RandomizedBenchmarkingFitResults,
+    RandomizedBenchmarkingResults,
+    run_randomized_benchmarking,
+    plot_benchmarking,
     
 
     #  Enums
@@ -105,9 +127,11 @@ include("core/qobj.jl")
 include("core/dynamic_system.jl")
 include("core/quantum_gate.jl")
 include("core/quantum_circuit.jl")
+include("core/clifford.jl")
 include("core/qpu.jl")
 include("core/transpile.jl")
 include("core/visualize.jl")
+include("benchmarking/randomized_benchmarking.jl")
 include("remote/circuit_jobs.jl")
 
 

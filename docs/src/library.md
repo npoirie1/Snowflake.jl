@@ -10,11 +10,15 @@ DocTestSetup = :(using Snowflake)
 QuantumCircuit
 push_gate!
 pop_gate!
+append!(base_circuit::QuantumCircuit, circuits_to_append::QuantumCircuit...)
+get_wider_circuit
+get_reordered_circuit
 simulate
 simulate_shots
 get_gate_counts
 get_num_gates
 get_depth
+get_inverse(circuit::QuantumCircuit)
 ```
 
 ## Quantum Gates
@@ -28,7 +32,9 @@ sigma_y
 sigma_z
 hadamard
 phase
+phase_dagger
 pi_8
+pi_8_dagger
 x_90
 rotation
 rotation_x
@@ -39,9 +45,11 @@ universal
 control_z
 control_x
 iswap
+iswap_dagger
 toffoli
 Base.:*(M::Gate, x::Ket)
 apply_gate!
+get_inverse(gate::Gate)
 ```
 
 ## Quantum Processing Unit
@@ -61,6 +69,7 @@ Ket
 Bra
 Operator
 Base.adjoint
+ishermitian
 Base.getindex(A::Operator, m::Int64, n::Int64)
 eigen
 tr
@@ -86,6 +95,26 @@ number_op
 coherent
 sesolve
 mesolve
+CliffordOperator
+get_clifford_operator
+get_random_clifford
+PauliGroupElement
+get_pauli_group_element
+push_clifford!
+```
+
+## Benchmarking
+### Randomized Benchmarking
+Snowflake has tools for conducting randomized benchmarking following the approach of
+[Magesan, Gambetta, and Emerson (2012)](http://dx.doi.org/10.1103/PhysRevA.85.042311).
+
+```@docs
+run_randomized_benchmarking
+RandomizedBenchmarkingProperties
+RandomizedBenchmarkingFitProperties
+RandomizedBenchmarkingResults
+RandomizedBenchmarkingFitResults
+plot_benchmarking
 ```
 
 ### Visualization
