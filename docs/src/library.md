@@ -15,6 +15,9 @@ get_wider_circuit
 get_reordered_circuit
 simulate
 simulate_shots
+get_gate_counts
+get_num_gates
+get_depth
 get_inverse(circuit::QuantumCircuit)
 ```
 

@@ -691,57 +691,6 @@ function simulate_shots(c::QuantumCircuit, shots_count::Int = 100)
 end
 
 """
-    get_inverse(circuit::QuantumCircuit)
-
-Return a `QuantumCircuit` which is the inverse of the input `circuit`.
-
-# Examples
-```jldoctest
-julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
-
-julia> push_gate!(c, rotation_y(1, pi/4));
-
-julia> push_gate!(c, control_x(1, 2))
-Quantum Circuit Object:
-   id: 47ddf072-7293-11ed-3d64-9f4fd1e69575 
-   qubit_count: 2 
-   bit_count: 0 
-q[1]:──Ry(0.7853981633974483)────*──
-                                 |  
-q[2]:────────────────────────────X──
-                                    
-
-
-
-julia> get_inverse(c)
-Quantum Circuit Object:
-   id: 6153cc20-7293-11ed-37d4-e14a7e7df842 
-   qubit_count: 2 
-   bit_count: 0 
-q[1]:──*────Ry(-0.7853981633974483)──
-       |                             
-q[2]:──X─────────────────────────────
-                                     
-
-
-
-```
-"""
-function get_inverse(circuit::QuantumCircuit)
-    reverse_pipeline = reverse(circuit.pipeline)
-    inverse_pipeline = Vector{Gate}[]
-    for step in reverse_pipeline
-        inverse_gate_list = Gate[]
-        for gate in step
-            push!(inverse_gate_list, get_inverse(gate))
-        end
-        push!(inverse_pipeline, inverse_gate_list)
-    end
-    return QuantumCircuit(qubit_count=circuit.qubit_count, bit_count=circuit.bit_count,
-        pipeline=inverse_pipeline)
-end
-
-"""
     simulate_shots(circuit_list::Array{QuantumCircuit}, shots_count::Int = 100)
 
 Emulates a quantum computer by running multiple circuits for a given number of shots.
@@ -817,4 +766,190 @@ function simulate_shots(circuit_list::Array{QuantumCircuit}, shots_count_list::A
         push!(shots_per_circuit_list, shots)
     end
     return shots_per_circuit_list
+end
+
+"""
+    get_inverse(circuit::QuantumCircuit)
+
+Return a `QuantumCircuit` which is the inverse of the input `circuit`.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, rotation_y(1, pi/4));
+
+julia> push_gate!(c, control_x(1, 2))
+Quantum Circuit Object:
+   id: 47ddf072-7293-11ed-3d64-9f4fd1e69575 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──Ry(0.7853981633974483)────*──
+                                 |  
+q[2]:────────────────────────────X──
+                                    
+
+
+
+julia> get_inverse(c)
+Quantum Circuit Object:
+   id: 6153cc20-7293-11ed-37d4-e14a7e7df842 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──*────Ry(-0.7853981633974483)──
+       |                             
+q[2]:──X─────────────────────────────
+                                     
+
+
+
+```
+"""
+function get_inverse(circuit::QuantumCircuit)
+    reverse_pipeline = reverse(circuit.pipeline)
+    inverse_pipeline = Vector{Gate}[]
+    for step in reverse_pipeline
+        inverse_gate_list = Gate[]
+        for gate in step
+            push!(inverse_gate_list, get_inverse(gate))
+        end
+        push!(inverse_pipeline, inverse_gate_list)
+    end
+    return QuantumCircuit(qubit_count=circuit.qubit_count, bit_count=circuit.bit_count,
+        pipeline=inverse_pipeline)
+end
+
+"""
+    get_gate_counts(circuit::QuantumCircuit)
+
+Returns a dictionary listing the number of gates of each type found in the `circuit`.
+
+The dictionary keys are the instruction_symbol of the gates while the values are the number of gates found.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, [hadamard(1), hadamard(2)]);
+
+julia> push_gate!(c, control_x(1, 2));
+
+julia> push_gate!(c, hadamard(2))
+Quantum Circuit Object:
+   id: cae04dc4-7bdc-11ed-2223-039a8d93f511 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H────*───────
+            |       
+q[2]:──H────X────H──
+                    
+
+
+
+julia> get_gate_counts(c)
+Dict{String, Int64} with 2 entries:
+  "h"  => 3
+  "cx" => 1
+
+```
+"""
+function get_gate_counts(circuit::QuantumCircuit)
+    gate_counts = Dict{String, Int}()
+    for step in circuit.pipeline
+        for gate in step
+            if haskey(gate_counts, gate.instruction_symbol)
+                gate_counts[gate.instruction_symbol] += 1
+            else
+                gate_counts[gate.instruction_symbol] = 1
+            end
+        end
+    end
+    return gate_counts
+end
+
+"""
+    get_num_gates(circuit::QuantumCircuit)
+
+Returns the number of gates in the `circuit`.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, [hadamard(1), hadamard(2)]);
+
+julia> push_gate!(c, control_x(1, 2))
+Quantum Circuit Object:
+   id: 2c899c5e-7bdf-11ed-0810-fbc3222f3890 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H────*──
+            |  
+q[2]:──H────X──
+               
+
+
+
+julia> get_num_gates(c)
+3
+
+```
+"""
+function get_num_gates(circuit::QuantumCircuit)
+    num_gates = 0
+    for step in circuit.pipeline
+        num_gates += length(step)
+    end
+    return num_gates
+end
+
+"""
+    get_depth(circuit::QuantumCircuit)
+
+Returns the depth of the `circuit`.
+
+Note that the function does not attempt to reduce the circuit depth by parallelizing gates.
+
+# Examples
+```jldoctest
+julia> c1 = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c1, hadamard(1));
+
+julia> push_gate!(c1, hadamard(2))
+Quantum Circuit Object:
+   id: 9902bb26-7be0-11ed-0df8-976e7a0d7b8d 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H───────
+               
+q[2]:───────H──
+               
+
+
+
+julia> get_depth(c1)
+2
+
+julia> c2 = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c2,[hadamard(1),  hadamard(2)])
+Quantum Circuit Object:
+   id: b3b1c0e8-7be0-11ed-0b8b-835771f15fc1 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H──
+          
+q[2]:──H──
+          
+
+
+
+julia> get_depth(c2)
+1
+
+```
+"""
+function get_depth(circuit::QuantumCircuit)
+    return length(circuit.pipeline)
 end

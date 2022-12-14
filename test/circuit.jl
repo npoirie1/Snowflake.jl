@@ -166,3 +166,18 @@ end
     @test fill("10", 3) == shots_list[1]
     @test fill("01", 2) == shots_list[2]
 end
+
+@testset "get_gate_counts" begin
+    c = QuantumCircuit(qubit_count = 2, bit_count = 0)
+    push_gate!(c, [sigma_x(1), sigma_x(2)])
+    push_gate!(c, control_x(1, 2))
+    push_gate!(c, sigma_x(2))
+    gate_counts = get_gate_counts(c)
+    @test gate_counts == Dict("cx"=>1, "x"=>3)
+
+    num_gates = get_num_gates(c)
+    @test num_gates == 4
+
+    depth = get_depth(c)
+    @test depth == 3
+end
