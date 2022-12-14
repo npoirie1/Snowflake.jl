@@ -505,3 +505,18 @@ function simulate_shots(c::QuantumCircuit, shots_count::Int = 100)
     data = StatsBase.sample(labels, StatsBase.Weights(weights), shots_count)
     return data
 end
+
+function get_gate_counts(circuit::QuantumCircuit)
+    gate_counts = Dict{String, Int}()
+    for step in circuit.pipeline
+        for gate in step
+            if haskey(gate_counts, gate.instruction_symbol)
+                gate_counts[gate.instruction_symbol] =
+                    gate_counts[gate.instruction_symbol]+1
+            else
+                gate_counts[gate.instruction_symbol] = 1
+            end
+        end
+    end
+    return gate_counts
+end
