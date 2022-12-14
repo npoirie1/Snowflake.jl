@@ -89,4 +89,7 @@ end
 
     num_gates = get_num_gates(c)
     @test num_gates == 4
+
+    depth = get_depth(c)
+    @test depth == 3
 end

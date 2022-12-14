@@ -14,6 +14,7 @@ simulate
 simulate_shots
 get_gate_counts
 get_num_gates
+get_depth
 ```
 
 ## Quantum Gates
