@@ -12,6 +12,7 @@ push_gate!
 pop_gate!
 simulate
 simulate_shots
+get_gate_counts
 ```
 
 ## Quantum Gates
