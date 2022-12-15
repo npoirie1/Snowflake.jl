@@ -1,6 +1,6 @@
 
 """
-        QuantumCircuit(qubit_count = .., bit_count = ...)
+    QuantumCircuit(qubit_count = .., bit_count = ...)
 
 A data structure to represent a *quantum circuit*.  
 # Fields
@@ -29,8 +29,8 @@ Base.@kwdef struct QuantumCircuit
 end
 
 """
-        push_gate!(circuit::QuantumCircuit, gate::Gate)
-        push_gate!(circuit::QuantumCircuit, gates::Array{Gate})
+    push_gate!(circuit::QuantumCircuit, gate::Gate)
+    push_gate!(circuit::QuantumCircuit, gates::Array{Gate})
 
 Pushes a single gate or an array of gates to the `circuit` pipeline. This function is mutable. 
 
@@ -81,7 +81,7 @@ function ensure_gates_are_in_circuit(circuit::QuantumCircuit, gates::Vector{<:Ga
 end
 
 """
-        pop_gate!(circuit::QuantumCircuit)
+    pop_gate!(circuit::QuantumCircuit)
 
 Removes the last gate from `circuit.pipeline`. 
 
@@ -122,6 +122,190 @@ q[2]:──X──
 function pop_gate!(circuit::QuantumCircuit)
     pop!(circuit.pipeline)
     return circuit
+end
+
+"""
+    append!(base_circuit::QuantumCircuit, circuits_to_append::QuantumCircuit...)
+
+Appends circuits to the `base_circuit`. The `circuits_to_append` cannot have more qubits
+than the `base_circuit`.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, [hadamard(1), sigma_x(2)])
+Quantum Circuit Object:
+   id: d64381ca-1360-11ed-2fc3-7b86db8b7417 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H──
+          
+q[2]:──X──
+
+
+julia> c1 = QuantumCircuit(qubit_count=1, bit_count=0);
+
+julia> push_gate!(c1, [sigma_x(1)])
+Quantum Circuit Object:
+   id: ed46d94e-1360-11ed-3c11-33df7e129e0b 
+   qubit_count: 1 
+   bit_count: 0 
+q[1]:──X──
+
+
+julia> c2 = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c2, [control_z(1,2)])
+Quantum Circuit Object:
+   id: fd6df078-1360-11ed-19e5-cf1aa91338b3 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──*──
+       |  
+q[2]:──Z──
+
+
+julia> append!(c, c1, c2);
+
+julia> print(c)
+Quantum Circuit Object:
+   id: d64381ca-1360-11ed-2fc3-7b86db8b7417 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H────X────*──
+                 |  
+q[2]:──X─────────Z──
+
+
+```
+"""
+function Base.append!(base_circuit::QuantumCircuit, circuits_to_append::QuantumCircuit...)
+    for circuit in circuits_to_append
+        if base_circuit.qubit_count < circuit.qubit_count
+            throw(ErrorException(
+                "the circuit to append cannot be wider than the base circuit"))
+        end
+        append!(base_circuit.pipeline, circuit.pipeline)
+    end
+end
+
+"""
+    get_wider_circuit(circuit::QuantumCircuit, num_qubits::Int)
+
+Return a copy of `circuit` but with a width of `num_qubits`. `num_qubits` cannot be less
+than the width of `circuit`.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, [hadamard(1), sigma_x(2)])
+Quantum Circuit Object:
+   id: c6bc82e2-1365-11ed-1a9f-757e431ca715 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H──
+          
+q[2]:──X──
+
+
+julia> wider_circuit = get_wider_circuit(c, 3)
+Quantum Circuit Object:
+   id: e28ec322-1365-11ed-06e3-ddae6aeb2c36 
+   qubit_count: 3 
+   bit_count: 0 
+q[1]:──H──
+          
+q[2]:──X──
+          
+q[3]:─────
+
+
+```
+"""
+function get_wider_circuit(circuit::QuantumCircuit, num_qubits::Int)
+    if circuit.qubit_count > num_qubits
+        throw(ErrorException("num_qubits cannot be less than the circuit width"))
+    end
+    new_circuit = QuantumCircuit(qubit_count=num_qubits,
+        bit_count=circuit.bit_count, pipeline=circuit.pipeline)
+    return new_circuit
+end
+
+"""
+    get_reordered_circuit(circuit::QuantumCircuit, qubit_map::Dict{Int, Int})
+
+Returns a circuit containing the gates of the input `circuit`. The gates are reordered
+according to the `qubit_map`. Qubits which are not reordered do not need to
+be included in the `qubit_map`. Qubits are added to the new circuit if necessary.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, [hadamard(1), sigma_x(2)])
+Quantum Circuit Object:
+   id: 5930787e-133c-11ed-3e7c-3701268d56db 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H──
+          
+q[2]:──X──
+
+
+julia> new_c = get_reordered_circuit(c, Dict(1=>3))
+Quantum Circuit Object:
+   id: 7ff7f0da-1344-11ed-1ab8-03b49d30363b 
+   qubit_count: 3 
+   bit_count: 0 
+q[1]:─────
+          
+q[2]:──X──
+          
+q[3]:──H──
+
+
+```
+"""
+function get_reordered_circuit(circuit::QuantumCircuit, qubit_map::Dict{Int, Int})
+    assert_qubit_mapping_is_valid(qubit_map, circuit.qubit_count)
+    pipeline = Array{Gate}[]
+    for moment in circuit.pipeline
+        new_moment = Gate[]
+        for gate in moment
+            new_target = Int[]
+            for single_target in gate.target
+                if haskey(qubit_map, single_target)
+                    push!(new_target, qubit_map[single_target])
+                else
+                    push!(new_target, single_target)
+                end
+            end
+            new_gate = copy(gate, new_target)
+            push!(new_moment, new_gate)
+        end
+        push!(pipeline, new_moment)
+    end
+    largest_new_qubit_id = maximum(values(qubit_map))
+    qubit_count = max(circuit.qubit_count, largest_new_qubit_id)
+    new_circuit = QuantumCircuit(qubit_count=qubit_count,
+        bit_count=circuit.bit_count, pipeline=pipeline)
+    return new_circuit
+end
+
+function assert_qubit_mapping_is_valid(qubit_map, qubit_count)
+    unique_values = unique(values(qubit_map))
+    if length(unique_values) != length(qubit_map)
+        throw(ErrorException("the qubit map is not injective"))
+    end
+
+    for qubit_pair in qubit_map
+        target_qubit = qubit_pair.second
+        if target_qubit <= qubit_count && !haskey(qubit_map, target_qubit)
+            throw(ErrorException("the qubit map is not valid"))
+        end
+    end
 end
 
 function Base.show(io::IO, circuit::QuantumCircuit, padding_width::Integer=10)
@@ -275,7 +459,7 @@ function get_split_circuit_layout(io::IO, circuit_layout::Array{String},
 end
 
 """
-        simulate(circuit::QuantumCircuit)
+    simulate(circuit::QuantumCircuit)
 
 Simulates and returns the wavefunction of the quantum device after running `circuit`. 
 
@@ -429,7 +613,7 @@ function get_b1_bitstrings(gate::Gate, target_space_bitstrings, qubit_count)
 end
 
 """
-        simulate_shots(c::QuantumCircuit, shots_count::Int = 100)
+    simulate_shots(c::QuantumCircuit, shots_count::Int = 100)
 
 Emulates a quantum computer by running a circuit for a given number of shots and returning measurement results.
 
@@ -486,7 +670,7 @@ julia> simulate_shots(c, 99)
 function simulate_shots(c::QuantumCircuit, shots_count::Int = 100)
     # return simulateShots(c, shots_count)
     ψ = simulate(c)
-    amplitudes = real.(ψ .* ψ)
+    amplitudes = adjoint.(ψ) .* ψ
     weights = Float32[]
 
     for a in amplitudes
@@ -504,6 +688,84 @@ function simulate_shots(c::QuantumCircuit, shots_count::Int = 100)
 
     data = StatsBase.sample(labels, StatsBase.Weights(weights), shots_count)
     return data
+end
+
+"""
+    simulate_shots(circuit_list::Array{QuantumCircuit}, shots_count::Int = 100)
+
+Emulates a quantum computer by running multiple circuits for a given number of shots.
+Returns a list of measurement results for each circuit.
+
+# Examples
+```jldoctest; filter = r"00|10|01"
+julia> c1 = Snowflake.QuantumCircuit(qubit_count = 2, bit_count = 0);
+
+julia> push_gate!(c1, hadamard(1))
+Quantum Circuit Object:
+   id: 1c7b03c6-1441-11ed-0848-515f7dcd57b4 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H──
+          
+q[2]:─────
+
+
+julia> c2 = Snowflake.QuantumCircuit(qubit_count = 2, bit_count = 0);
+
+julia> push_gate!(c2, hadamard(2))
+Quantum Circuit Object:
+   id: 269e8632-1441-11ed-345c-f3fc87e6a02b 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:─────
+          
+q[2]:──H──
+
+
+julia> circuit_list = [c1, c2];
+
+julia> shots_list = simulate_shots(circuit_list, 6);
+
+julia> c1_shots = shots_list[1]
+6-element Vector{String}:
+ "00"
+ "10"
+ "00"
+ "10"
+ "10"
+ "10"
+
+julia> c2_shots = shots_list[2]
+6-element Vector{String}:
+ "01"
+ "01"
+ "01"
+ "01"
+ "00"
+ "00"
+
+```
+"""
+function simulate_shots(circuit_list::Array{QuantumCircuit}, shots_count::Int = 100)
+    num_circuits = length(circuit_list)
+    shots_count_list = fill(shots_count, num_circuits)
+    return simulate_shots(circuit_list, shots_count_list)
+end
+
+"""
+    simulate_shots(circuit_list::Array{QuantumCircuit}, shots_count_list::Array{Int})
+
+Emulates a quantum computer by running multiple circuits and returning a list of measurement
+results for each circuit. `shots_count_list` is used to specify the number of shots for
+each circuit.
+"""
+function simulate_shots(circuit_list::Array{QuantumCircuit}, shots_count_list::Array{Int})
+    shots_per_circuit_list = []
+    for (i, circuit) in enumerate(circuit_list)
+        shots = simulate_shots(circuit, shots_count_list[i])
+        push!(shots_per_circuit_list, shots)
+    end
+    return shots_per_circuit_list
 end
 
 """
@@ -555,4 +817,139 @@ function get_inverse(circuit::QuantumCircuit)
     end
     return QuantumCircuit(qubit_count=circuit.qubit_count, bit_count=circuit.bit_count,
         pipeline=inverse_pipeline)
+end
+
+"""
+    get_gate_counts(circuit::QuantumCircuit)
+
+Returns a dictionary listing the number of gates of each type found in the `circuit`.
+
+The dictionary keys are the instruction_symbol of the gates while the values are the number of gates found.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, [hadamard(1), hadamard(2)]);
+
+julia> push_gate!(c, control_x(1, 2));
+
+julia> push_gate!(c, hadamard(2))
+Quantum Circuit Object:
+   id: cae04dc4-7bdc-11ed-2223-039a8d93f511 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H────*───────
+            |       
+q[2]:──H────X────H──
+                    
+
+
+
+julia> get_gate_counts(c)
+Dict{String, Int64} with 2 entries:
+  "h"  => 3
+  "cx" => 1
+
+```
+"""
+function get_gate_counts(circuit::QuantumCircuit)
+    gate_counts = Dict{String, Int}()
+    for step in circuit.pipeline
+        for gate in step
+            if haskey(gate_counts, gate.instruction_symbol)
+                gate_counts[gate.instruction_symbol] += 1
+            else
+                gate_counts[gate.instruction_symbol] = 1
+            end
+        end
+    end
+    return gate_counts
+end
+
+"""
+    get_num_gates(circuit::QuantumCircuit)
+
+Returns the number of gates in the `circuit`.
+
+# Examples
+```jldoctest
+julia> c = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c, [hadamard(1), hadamard(2)]);
+
+julia> push_gate!(c, control_x(1, 2))
+Quantum Circuit Object:
+   id: 2c899c5e-7bdf-11ed-0810-fbc3222f3890 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H────*──
+            |  
+q[2]:──H────X──
+               
+
+
+
+julia> get_num_gates(c)
+3
+
+```
+"""
+function get_num_gates(circuit::QuantumCircuit)
+    num_gates = 0
+    for step in circuit.pipeline
+        num_gates += length(step)
+    end
+    return num_gates
+end
+
+"""
+    get_depth(circuit::QuantumCircuit)
+
+Returns the depth of the `circuit`.
+
+Note that the function does not attempt to reduce the circuit depth by parallelizing gates.
+
+# Examples
+```jldoctest
+julia> c1 = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c1, hadamard(1));
+
+julia> push_gate!(c1, hadamard(2))
+Quantum Circuit Object:
+   id: 9902bb26-7be0-11ed-0df8-976e7a0d7b8d 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H───────
+               
+q[2]:───────H──
+               
+
+
+
+julia> get_depth(c1)
+2
+
+julia> c2 = QuantumCircuit(qubit_count=2, bit_count=0);
+
+julia> push_gate!(c2,[hadamard(1),  hadamard(2)])
+Quantum Circuit Object:
+   id: b3b1c0e8-7be0-11ed-0b8b-835771f15fc1 
+   qubit_count: 2 
+   bit_count: 0 
+q[1]:──H──
+          
+q[2]:──H──
+          
+
+
+
+julia> get_depth(c2)
+1
+
+```
+"""
+function get_depth(circuit::QuantumCircuit)
+    return length(circuit.pipeline)
 end

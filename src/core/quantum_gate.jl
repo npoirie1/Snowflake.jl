@@ -74,6 +74,29 @@ Underlying data Matrix{Complex}:
 """
 abstract type Gate end
 
+function Base.copy(gate::Gate, new_target::Array{Int}=Int[])
+    if isempty(new_target)
+        new_target = gate.target
+    end
+    gate_type = typeof(gate)
+    new_gate = gate_type(gate.display_symbol, gate.instruction_symbol,
+        new_target, gate.parameters)
+    return new_gate
+end
+
+function Base.isapprox(x::Gate, y::Gate; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps())
+    if x.instruction_symbol != y.instruction_symbol
+        return false
+    elseif x.target != y.target
+        return false
+    elseif !all(isapprox.(x.parameters, y.parameters, atol=atol, rtol=rtol))
+        return false
+    else
+        return true
+    end
+
+end
+
 function Base.show(io::IO, gate::Gate)
     println(io, "Gate Object:")
     println(io, "instruction symbol: " * gate.instruction_symbol)
@@ -463,6 +486,25 @@ iswap() = Operator(
 )
 
 """
+    iswap_dagger()
+
+Return the adjoint of the imaginary swap `Operator`, which is defined as:
+```math
+iSWAP^\\dagger = \\begin{bmatrix}
+    1 & 0 & 0 & 0 \\\\
+    0 & 0 & -i & 0 \\\\
+    0 & -i & 0 & 0 \\\\
+    0 & 0 & 0 & 1
+    \\end{bmatrix}.
+```
+"""
+iswap_dagger() = Operator(
+    Complex.(
+        [[1.0, 0.0, 0.0, 0.0] [0.0, 0.0, -im, 0.0] [0.0, -im, 0.0, 0.0] [0.0, 0.0, 0.0, 1.0]],
+    ),
+)
+
+"""
     toffoli()
 
 Return the Toffoli `Operator`, which is defined as:
@@ -488,25 +530,6 @@ toffoli() = Operator(
     0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0
     0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0
     0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0]
-)
-
-"""
-    iswap_dagger()
-
-Return the adjoint of the imaginary swap `Operator`, which is defined as:
-```math
-iSWAP^\\dagger = \\begin{bmatrix}
-    1 & 0 & 0 & 0 \\\\
-    0 & 0 & -i & 0 \\\\
-    0 & -i & 0 & 0 \\\\
-    0 & 0 & 0 & 1
-    \\end{bmatrix}.
-```
-"""
-iswap_dagger() = Operator(
-    Complex.(
-        [[1.0, 0.0, 0.0, 0.0] [0.0, 0.0, -im, 0.0] [0.0, -im, 0.0, 0.0] [0.0, 0.0, 0.0, 1.0]],
-    ),
 )
 
 """
