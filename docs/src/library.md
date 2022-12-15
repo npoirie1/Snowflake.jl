@@ -49,6 +49,7 @@ iswap_dagger
 toffoli
 Base.:*(M::Gate, x::Ket)
 apply_gate!
+get_operator
 get_inverse(gate::Gate)
 ```
 
