@@ -27,7 +27,7 @@ julia> print(ψ)
 ```
 """
 struct Ket
-    data::Vector{Complex}
+    data::Vector{ComplexF64}
 end
 
 function Base.show(io::IO, x::Ket)
@@ -99,10 +99,10 @@ Underlying data Matrix{Complex}:
 ```
 """
 struct Operator
-    data::Matrix{Complex}
+    data::Matrix{ComplexF64}
 end
 
-Base.length(x::Ket) = Base.length(x.data)
+Base.length(x::Ket) = length(x.data)
 
 """
     Base.adjoint(x)
@@ -159,7 +159,9 @@ Base.:*(A::Operator, B::Operator) = Operator(A.data * B.data)
 Base.:*(s::Any, A::Operator) = Operator(s*A.data)
 Base.:+(A::Operator, B::Operator) = Operator(A.data+ B.data)
 Base.:-(A::Operator, B::Operator) = Operator(A.data- B.data)
-Base.length(x::Union{Ket, Bra}) = Base.length(x.data)
+Base.length(x::Union{Ket, Bra}) = length(x.data)
+
+Base.exp(A::Operator) = Operator(exp(A.data))
 
 """
     Base.getindex(A::Operator, m::Int64, n::Int64)
