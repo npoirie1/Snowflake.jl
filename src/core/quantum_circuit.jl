@@ -308,9 +308,7 @@ q[2]:───────X──
                
 
 
-julia> ket = simulate(c);
-
-julia> print(ket)
+julia> ket = simulate(c)
 4-element Ket:
 0.7071067811865475 + 0.0im
 0.0 + 0.0im
