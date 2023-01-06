@@ -708,17 +708,17 @@ julia> get_measurement_probabilities(ψ, target_qubit)
 ```
 """
 function get_measurement_probabilities(x::Ket)
-    return real.(x .* x)
+    return real.(adjoint.(x) .* x)
 end
 
 function get_measurement_probabilities(x::Ket, target_bodies::Vector{<:Integer},
     hspace_size_per_body::Integer=2)
 
-    amplitudes = real.(x .* x)
+    amplitudes = real.(adjoint.(x) .* x)
     num_amplitudes = length(amplitudes)
     num_target_amplitudes = hspace_size_per_body^length(target_bodies)
     if num_target_amplitudes == num_amplitudes
-        return get_measurement_probabilities(x)
+        return amplitudes
     else
         num_bodies = get_num_bodies(x, hspace_size_per_body)
         remaining_bodies = [x for x ∈ 1:num_bodies if x ∉ target_bodies]
