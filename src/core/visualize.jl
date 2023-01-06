@@ -30,12 +30,11 @@ Contains fields which affect how a Bloch sphere is generated.
     
 # Examples
 ```jldoctest
-julia> ket = Ket(1/sqrt(2)*[1, 1]);
-
-julia> print(ket)
+julia> ket = Ket(1/sqrt(2)*[1, 1])
 2-element Ket:
 0.7071067811865475 + 0.0im
 0.7071067811865475 + 0.0im
+
 
 julia> bloch_sphere = BlochSphere(vector_color="green");
 
@@ -139,12 +138,11 @@ be modified by passing a [`BlochSphere`](@ref) struct.
     
 # Examples
 ```jldoctest
-julia> ket = Ket(1/sqrt(2)*[1, 1]);
-
-julia> print(ket)
+julia> ket = Ket(1/sqrt(2)*[1, 1])
 2-element Ket:
 0.7071067811865475 + 0.0im
 0.7071067811865475 + 0.0im
+
 
 ```
 ```
@@ -183,7 +181,7 @@ sphere can be modified by passing a [`BlochSphere`](@ref) struct.
 julia> ρ = Operator([1.0 0.0;
                      0.0 0.0])
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 1.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    0.0 + 0.0im
 

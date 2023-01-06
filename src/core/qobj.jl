@@ -7,33 +7,33 @@ Although NOT the preferred way, one can directly build a Ket object by passing a
 ```jldoctest
 julia> using Snowflake
 
-julia> ψ = Snowflake.Ket([1.0; 0.0; 0.0]);
-
-julia> print(ψ)
+julia> ψ = Ket([1.0; 0.0; 0.0])
 3-element Ket:
 1.0 + 0.0im
 0.0 + 0.0im
 0.0 + 0.0im
+
+
 ```
 A better way to initialize a Ket is to use a pre-built basis such as the `fock` basis. See [`fock`](@ref) for further information on this function. 
 ```jldoctest
-julia> ψ = Snowflake.fock(2, 3);
-
-julia> print(ψ)
+julia> ψ = fock(2, 3)
 3-element Ket:
 0.0 + 0.0im
 0.0 + 0.0im
 1.0 + 0.0im
+
+
 ```
 """
 struct Ket
-    data::Vector{Complex}
+    data::Vector{ComplexF64}
 end
 
 function Base.show(io::IO, x::Ket)
-    println("$(length(x.data))-element Ket:")
+    println(io, "$(length(x.data))-element Ket:")
     for val in x.data
-        println(val)
+        println(io, val)
     end
 end
 
@@ -43,26 +43,22 @@ A structure representing a Bra (i.e. a row vector of complex values). A Bra is c
 - `data` -- the stored values.
 # Examples
 ```jldoctest
-julia> ψ = Snowflake.fock(1, 3);
-
-julia> print(ψ)
+julia> ψ = fock(1, 3)
 3-element Ket:
 0.0 + 0.0im
 1.0 + 0.0im
 0.0 + 0.0im
 
-julia> _ψ = Snowflake.Bra(ψ);
 
-julia> print(_ψ)
+julia> _ψ = Bra(ψ)
 Bra(Any[0.0 - 0.0im 1.0 - 0.0im 0.0 - 0.0im])
-
 
 julia> _ψ * ψ    # A Bra times a Ket is a scalar
 1.0 + 0.0im
 
 julia> ψ*_ψ     # A Ket times a Bra is an operator
 (3, 3)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    1.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im
@@ -84,7 +80,7 @@ A structure representing a quantum operator (i.e. a complex matrix).
 ```jldoctest
 julia> z = Snowflake.Operator([1.0 0.0;0.0 -1.0])
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 1.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    -1.0 + 0.0im
 
@@ -93,16 +89,16 @@ Alternatively:
 ```jldoctest
 julia> z = Snowflake.sigma_z()  #sigma_z is a defined function in Snowflake
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 1.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    -1.0 + 0.0im
 ```
 """
 struct Operator
-    data::Matrix{Complex}
+    data::Matrix{ComplexF64}
 end
 
-Base.length(x::Ket) = Base.length(x.data)
+Base.length(x::Ket) = length(x.data)
 
 """
     Base.adjoint(x)
@@ -122,7 +118,7 @@ Determine if Operator `A` is Hermitian (i.e. self-adjoint).
 ```jldoctest
 julia> Y = sigma_y()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.0 + 0.0im    0.0 - 1.0im
 0.0 + 1.0im    0.0 + 0.0im
 
@@ -132,7 +128,7 @@ true
 
 julia> P = sigma_p()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.0 + 0.0im    1.0 + 0.0im
 0.0 + 0.0im    0.0 + 0.0im
 
@@ -159,7 +155,32 @@ Base.:*(A::Operator, B::Operator) = Operator(A.data * B.data)
 Base.:*(s::Any, A::Operator) = Operator(s*A.data)
 Base.:+(A::Operator, B::Operator) = Operator(A.data+ B.data)
 Base.:-(A::Operator, B::Operator) = Operator(A.data- B.data)
-Base.length(x::Union{Ket, Bra}) = Base.length(x.data)
+Base.length(x::Union{Ket, Bra}) = length(x.data)
+
+"""
+    exp(A::Operator)
+
+Compute the matrix exponential of `Operator` `A`.
+
+# Examples
+```jldoctest
+julia> X = sigma_x()
+(2, 2)-element Snowflake.Operator:
+Underlying data Matrix{ComplexF64}:
+0.0 + 0.0im    1.0 + 0.0im
+1.0 + 0.0im    0.0 + 0.0im
+
+
+julia> x_rotation_90_deg = exp(-im*π/4*X)
+(2, 2)-element Snowflake.Operator:
+Underlying data Matrix{ComplexF64}:
+0.7071067811865477 + 0.0im    0.0 - 0.7071067811865475im
+0.0 - 0.7071067811865475im    0.7071067811865477 + 0.0im
+
+
+```
+"""
+Base.exp(A::Operator) = Operator(exp(A.data))
 
 """
     Base.getindex(A::Operator, m::Int64, n::Int64)
@@ -180,7 +201,7 @@ The `i`th eigenvector is extracted by calling `F.vectors[:, i]`.
 ```jldoctest
 julia> X = sigma_x()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.0 + 0.0im    1.0 + 0.0im
 1.0 + 0.0im    0.0 + 0.0im
 
@@ -208,13 +229,14 @@ Compute the trace of Operator `A`.
 ```jldoctest
 julia> I = eye()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
-1.0 + 0.0im    0 + 0im
-0 + 0im    1.0 + 0.0im
+Underlying data Matrix{ComplexF64}:
+1.0 + 0.0im    0.0 + 0.0im
+0.0 + 0.0im    1.0 + 0.0im
 
 
 julia> trace = tr(I)
 2.0 + 0.0im
+
 ```
 """
 tr(A::Operator)=LinearAlgebra.tr(A.data)
@@ -226,9 +248,7 @@ Compute the expectation value ⟨`ψ`|`A`|`ψ`⟩ given Operator `A` and Ket |`�
 
 # Examples
 ```jldoctest
-julia> ψ = Ket([0.0; 1.0]);
-
-julia> print(ψ)
+julia> ψ = Ket([0.0; 1.0])
 2-element Ket:
 0.0 + 0.0im
 1.0 + 0.0im
@@ -236,7 +256,7 @@ julia> print(ψ)
 
 julia> A = sigma_z()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 1.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    -1.0 + 0.0im
 
@@ -263,25 +283,19 @@ More details about the Kronecker product can be found
 
 # Examples
 ```jldoctest
-julia> ψ_0 = Ket([0.0; 1.0]);
-
-julia> print(ψ_0)
+julia> ψ_0 = Ket([0.0; 1.0])
 2-element Ket:
 0.0 + 0.0im
 1.0 + 0.0im
 
 
-julia> ψ_1 = Ket([1.0; 0.0]);
-
-julia> print(ψ_1)
+julia> ψ_1 = Ket([1.0; 0.0])
 2-element Ket:
 1.0 + 0.0im
 0.0 + 0.0im
 
 
-julia> ψ_0_1 = kron(ψ_0, ψ_1);
-
-julia> print(ψ_0_1)
+julia> ψ_0_1 = kron(ψ_0, ψ_1)
 4-element Ket:
 0.0 + 0.0im
 0.0 + 0.0im
@@ -291,7 +305,7 @@ julia> print(ψ_0_1)
 
 julia> kron(sigma_x(), sigma_y())
 (4, 4)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    0.0 - 1.0im
 0.0 + 0.0im    0.0 + 0.0im    0.0 + 1.0im    0.0 + 0.0im
 0.0 + 0.0im    0.0 - 1.0im    0.0 + 0.0im    0.0 + 0.0im
@@ -336,13 +350,13 @@ Snowflake.Multibody system with 3 bodies
 
 julia> x = Snowflake.sigma_x()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 0.0 + 0.0im    1.0 + 0.0im
 1.0 + 0.0im    0.0 + 0.0im
 
 julia> X_1=Snowflake.get_embed_operator(x,1,system)
 (8, 8)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    1.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    1.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im    1.0 + 0.0im    0.0 + 0.0im
@@ -363,7 +377,7 @@ function get_embed_operator(op::Operator, target_body_index::Int, system::MultiB
     end
 
     result = Operator(
-        Matrix{Complex}(
+        Matrix{ComplexF64}(
             I,
             system.hilbert_space_structure[1],
             system.hilbert_space_structure[1],
@@ -378,7 +392,7 @@ function get_embed_operator(op::Operator, target_body_index::Int, system::MultiB
             result = kron(result, op)
         else
             n_hilbert = system.hilbert_space_structure[i_body]
-            result = kron(result, Operator(Matrix{Complex}(I, n_hilbert, n_hilbert)))
+            result = kron(result, Operator(Matrix{ComplexF64}(I, n_hilbert, n_hilbert)))
         end
     end
     return result
@@ -411,9 +425,10 @@ Returns the number of qubits associated with an `Operator`.
 julia> ρ = Operator([1 0
                      0 0])
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
-1 + 0im    0 + 0im
-0 + 0im    0 + 0im
+Underlying data Matrix{ComplexF64}:
+1.0 + 0.0im    0.0 + 0.0im
+0.0 + 0.0im    0.0 + 0.0im
+
 
 julia> get_num_qubits(ρ)
 1
@@ -439,14 +454,13 @@ end
 Returns the number of qubits associated with a `Ket` or a `Bra`.
 # Examples
 ```jldoctest
-julia> ψ = Ket([1, 0, 0, 0]);
-
-julia> print(ψ)
+julia> ψ = Ket([1, 0, 0, 0])
 4-element Ket:
-1 + 0im
-0 + 0im
-0 + 0im
-0 + 0im
+1.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+
 
 julia> get_num_qubits(ψ)
 2
@@ -473,10 +487,11 @@ julia> ρ = Operator([1 0 0
                      0 0 0
                      0 0 0])
 (3, 3)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
-1 + 0im    0 + 0im    0 + 0im
-0 + 0im    0 + 0im    0 + 0im
-0 + 0im    0 + 0im    0 + 0im
+Underlying data Matrix{ComplexF64}:
+1.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im
+0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im
+0.0 + 0.0im    0.0 + 0.0im    0.0 + 0.0im
+
 
 julia> get_num_bodies(ρ, 3)
 1
@@ -503,19 +518,18 @@ Returns the number of bodies associated with a `Ket` or a `Bra` given the
 `hilbert_space_size_per_body`.
 # Examples
 ```jldoctest
-julia> ψ = Ket([1, 0, 0, 0, 0, 0, 0, 0, 0]);
-
-julia> print(ψ)
+julia> ψ = Ket([1, 0, 0, 0, 0, 0, 0, 0, 0])
 9-element Ket:
-1 + 0im
-0 + 0im
-0 + 0im
-0 + 0im
-0 + 0im
-0 + 0im
-0 + 0im
-0 + 0im
-0 + 0im
+1.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+0.0 + 0.0im
+
 
 julia> get_num_bodies(ψ, 3)
 2
@@ -537,22 +551,20 @@ end
 Returns the `i`th fock basis of a Hilbert space with size `hspace_size` as Snowflake.Ket.
 # Examples
 ```jldoctest
-julia> ψ = Snowflake.fock(0, 3);
-
-julia> print(ψ)
+julia> ψ = Snowflake.fock(0, 3)
 3-element Ket:
 1.0 + 0.0im
 0.0 + 0.0im
 0.0 + 0.0im
 
 
-julia> ψ = Snowflake.fock(1, 3);
-
-julia> print(ψ)
+julia> ψ = Snowflake.fock(1, 3)
 3-element Ket:
 0.0 + 0.0im
 1.0 + 0.0im
 0.0 + 0.0im
+
+
 ```
 """
 function fock(i, hspace_size)
@@ -611,34 +623,33 @@ Returns a coherent state for the parameter `alpha` in a Fock space of size `hspa
 
     # Examples
 ```jldoctest
-julia> ψ = Snowflake.coherent(2.0,20);
-
-julia> print(ψ)
+julia> ψ = Snowflake.coherent(2.0,20)
 20-element Ket:
-0.13533528323661270231781372785917483270168304443359375 + 0.0im
-0.2706705664732254046356274557183496654033660888671875 + 0.0im
-0.3827859860416437253261507804308297496944779411605434060697044368322244814859633 + 0.0im
-0.4420031841663186705315006220668383887063770056788388080454298547413058719111879 + 0.0im
-0.4420031841663186705315006220668383887063770056788388080454298547413058719111879 + 0.0im
-0.3953396664268989033516298387998153143981494385130297054512994395645417722835952 + 0.0im
-0.3227934859426706749083446895240143309122789082442331409841890434072244670369041 + 0.0im
-0.2440089396102658373848913914105868080225858281751344102479261185426274154783478 + 0.0im
-0.1725403758685577344434702345068468523504659376126805082402433361167676595291802 + 0.0im
-0.1150269172457051562956468230045645682336439584084536721601622240778451063527861 + 0.0im
-0.07274941014482606043765122911007029674853133081310976424472247415659623989683902 + 0.0im
-0.04386954494001140575894979175461054210856445342112420740912216424244799751166167 + 0.0im
-0.02532809358034196997591593372015585816248494654573845414140041049288863525802268 + 0.0im
-0.01404949847902665677216550321294394000313011924224810466364209088409881639691112 + 0.0im
-0.007509772823502763531724947918871845905858490361570411398782773832262018118359266 + 0.0im
-0.003878030010563633897440227516084030465660984499951448370503442999620168228954113 + 0.0im
-0.001939015005281816948720113758042015232830492249975724185251721499810084114477056 + 0.0im
-0.0009405604325217079112661845386949416195293171394724978755464370121167236584289665 + 0.0im
-0.0004433844399679012093293182780011289711800019436937749734346315219336842860352511 + 0.0im
-0.0002034387333640481868882144439914691756776463670619686354629916554722074664961924 + 0.0im
+0.1353352832366127 + 0.0im
+0.2706705664732254 + 0.0im
+0.38278598604164377 + 0.0im
+0.4420031841663187 + 0.0im
+0.4420031841663187 + 0.0im
+0.3953396664268989 + 0.0im
+0.3227934859426707 + 0.0im
+0.24400893961026585 + 0.0im
+0.17254037586855772 + 0.0im
+0.11502691724570514 + 0.0im
+0.07274941014482605 + 0.0im
+0.043869544940011405 + 0.0im
+0.025328093580341972 + 0.0im
+0.014049498479026656 + 0.0im
+0.007509772823502763 + 0.0im
+0.003878030010563634 + 0.0im
+0.001939015005281817 + 0.0im
+0.000940560432521708 + 0.0im
+0.0004433844399679012 + 0.0im
+0.00020343873336404819 + 0.0im
 
 
-julia> Snowflake.expected_value(Snowflake.number_op(20),ψ)
-3.999999793648639261230596388008292158320219007459973469036845972185905095821291 + 0.0im
+julia> expected_value(number_op(20),ψ)
+3.9999997936486387 + 0.0im
+
 ```
 """
 function coherent(alpha, hspace_size)
@@ -800,21 +811,21 @@ Returns the commutation of `A` and `B`.
 ```jldoctest
 julia> σ_x = sigma_x()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 0.0 + 0.0im    1.0 + 0.0im
 1.0 + 0.0im    0.0 + 0.0im
 
 
 julia> σ_y = sigma_y()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 0.0 + 0.0im    0.0 - 1.0im
 0.0 + 1.0im    0.0 + 0.0im
 
 
 julia> Snowflake.commute(σ_x,σ_y)
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 0.0 + 2.0im    0.0 + 0.0im
 0.0 + 0.0im    0.0 - 2.0im
 ```
@@ -830,14 +841,14 @@ Returns the anticommutation of `A` and `B`.
 ```jldoctest
 julia> σ_x = Snowflake.sigma_x()
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 0.0 + 0.0im    1.0 + 0.0im
 1.0 + 0.0im    0.0 + 0.0im
 
 
 julia> Snowflake.anticommute(σ_x,σ_x)
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}: 
+Underlying data Matrix{ComplexF64}: 
 2.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    2.0 + 0.0im
 ```

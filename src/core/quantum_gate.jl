@@ -53,7 +53,7 @@ instruction symbol: x_45
 targets: [1]
 operator:
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.9238795325112867 + 0.0im    0.0 - 0.3826834323650898im
 0.0 - 0.3826834323650898im    0.9238795325112867 + 0.0im
 
@@ -65,7 +65,7 @@ parameters: [-0.7853981633974483]
 targets: [1]
 operator:
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.9238795325112867 + 0.0im    -0.0 + 0.3826834323650898im
 -0.0 + 0.3826834323650898im    0.9238795325112867 + 0.0im
 
@@ -119,14 +119,13 @@ Update the `state` by applying a `gate` to it.
 
 # Examples
 ```jldoctest
-julia> ψ_0 = fock(0, 2);
-
-julia> print(ψ_0)
+julia> ψ_0 = fock(0, 2)
 2-element Ket:
 1.0 + 0.0im
 0.0 + 0.0im
 
-julia> apply_gate!(ψ_0, sigma_x(1));
+
+julia> apply_gate!(ψ_0, sigma_x(1))
 
 julia> print(ψ_0)
 2-element Ket:
@@ -291,7 +290,7 @@ I = \\begin{bmatrix}
     \\end{bmatrix}.
 ```
 """
-eye() = Operator(Matrix{Complex}(1.0I, 2, 2))
+eye() = Operator(Matrix{ComplexF64}(1.0I, 2, 2))
 
 """
     x_90()
@@ -557,7 +556,7 @@ julia> x = sigma_x(1);
 
 julia> get_operator(x)
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.0 + 0.0im    1.0 + 0.0im
 1.0 + 0.0im    0.0 + 0.0im
 
@@ -979,19 +978,17 @@ Return a `Ket` which results from applying `Gate` `M` to `Ket` `x`.
 
 # Examples
 ```jldoctest
-julia> ψ_0 = fock(0, 2);
-
-julia> print(ψ_0)
+julia> ψ_0 = fock(0, 2)
 2-element Ket:
 1.0 + 0.0im
 0.0 + 0.0im
 
-julia> ψ_1 = sigma_x(1)*ψ_0;
 
-julia> print(ψ_1)
+julia> ψ_1 = sigma_x(1)*ψ_0
 2-element Ket:
 0.0 + 0.0im
 1.0 + 0.0im
+
 
 ```
 """
@@ -1017,7 +1014,7 @@ parameters: [-1.5707963267948966, 1.0471975511965976, 0.7853981633974483]
 targets: [1]
 operator:
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.7071067811865476 + 0.0im    0.5 + 0.4999999999999999im
 -0.3535533905932738 - 0.6123724356957945im    -0.18301270189221924 + 0.6830127018922194im
 
@@ -1029,7 +1026,7 @@ parameters: [1.5707963267948966, -0.7853981633974483, -1.0471975511965976]
 targets: [1]
 operator:
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 0.7071067811865476 + 0.0im    -0.3535533905932738 + 0.6123724356957945im
 0.5 - 0.4999999999999999im    -0.18301270189221924 - 0.6830127018922194im
 
