@@ -182,7 +182,7 @@ sphere can be modified by passing a [`BlochSphere`](@ref) struct.
 julia> ρ = Operator([1.0 0.0;
                      0.0 0.0])
 (2, 2)-element Snowflake.Operator:
-Underlying data Matrix{Complex}:
+Underlying data Matrix{ComplexF64}:
 1.0 + 0.0im    0.0 + 0.0im
 0.0 + 0.0im    0.0 + 0.0im
 
