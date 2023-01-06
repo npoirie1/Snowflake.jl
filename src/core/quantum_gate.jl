@@ -74,6 +74,29 @@ Underlying data Matrix{Complex}:
 """
 abstract type Gate end
 
+function Base.copy(gate::Gate, new_target::Array{Int}=Int[])
+    if isempty(new_target)
+        new_target = gate.target
+    end
+    gate_type = typeof(gate)
+    new_gate = gate_type(gate.display_symbol, gate.instruction_symbol,
+        new_target, gate.parameters)
+    return new_gate
+end
+
+function Base.isapprox(x::Gate, y::Gate; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps())
+    if x.instruction_symbol != y.instruction_symbol
+        return false
+    elseif x.target != y.target
+        return false
+    elseif !all(isapprox.(x.parameters, y.parameters, atol=atol, rtol=rtol))
+        return false
+    else
+        return true
+    end
+
+end
+
 function Base.show(io::IO, gate::Gate)
     println(io, "Gate Object:")
     println(io, "instruction symbol: " * gate.instruction_symbol)
