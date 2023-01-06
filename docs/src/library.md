@@ -15,6 +15,7 @@ get_wider_circuit
 get_reordered_circuit
 simulate
 simulate_shots
+get_measurement_probabilities(circuit::QuantumCircuit)
 get_gate_counts
 get_num_gates
 get_depth
@@ -45,8 +46,8 @@ universal
 control_z
 control_x
 iswap
-iswap_dagger
 toffoli
+iswap_dagger
 Base.:*(M::Gate, x::Ket)
 apply_gate!
 get_operator
@@ -70,7 +71,7 @@ Ket
 Bra
 Operator
 Base.adjoint
-ishermitian
+is_hermitian
 Base.getindex(A::Operator, m::Int64, n::Int64)
 eigen
 tr
@@ -80,6 +81,7 @@ MultiBodySystem
 commute
 anticommute
 normalize!
+get_measurement_probabilities(x::Ket)
 ket2dm
 fock_dm
 Snowflake.moyal

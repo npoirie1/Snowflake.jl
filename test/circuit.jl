@@ -148,6 +148,21 @@ end
     @test inverse_c.pipeline[2][1].parameters ≈ [-pi/2]
 end
 
+@testset "get_measurement_probabilities" begin
+    circuit = QuantumCircuit(qubit_count=2, bit_count=0)
+    push_gate!(circuit, [hadamard(1), sigma_x(2)])
+    probabilities = get_measurement_probabilities(circuit)
+    @test probabilities ≈ [0, 0.5, 0, 0.5]
+
+    target_qubit = [1]
+    probabilities = get_measurement_probabilities(circuit, target_qubit)
+    @test probabilities ≈ [0.5, 0.5]
+
+    target_qubit = [2]
+    probabilities = get_measurement_probabilities(circuit, target_qubit)
+    @test probabilities ≈ [0, 1]
+end
+
 @testset "simulate_shots_for_multiple_circuits" begin
     c1 = QuantumCircuit(qubit_count = 2, bit_count = 0)
     push_gate!(c1, sigma_x(1))

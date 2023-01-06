@@ -486,25 +486,6 @@ iswap() = Operator(
 )
 
 """
-    iswap_dagger()
-
-Return the adjoint of the imaginary swap `Operator`, which is defined as:
-```math
-iSWAP^\\dagger = \\begin{bmatrix}
-    1 & 0 & 0 & 0 \\\\
-    0 & 0 & -i & 0 \\\\
-    0 & -i & 0 & 0 \\\\
-    0 & 0 & 0 & 1
-    \\end{bmatrix}.
-```
-"""
-iswap_dagger() = Operator(
-    Complex.(
-        [[1.0, 0.0, 0.0, 0.0] [0.0, 0.0, -im, 0.0] [0.0, -im, 0.0, 0.0] [0.0, 0.0, 0.0, 1.0]],
-    ),
-)
-
-"""
     toffoli()
 
 Return the Toffoli `Operator`, which is defined as:
@@ -530,6 +511,25 @@ toffoli() = Operator(
     0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0
     0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0
     0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0]
+)
+
+"""
+    iswap_dagger()
+
+Return the adjoint of the imaginary swap `Operator`, which is defined as:
+```math
+iSWAP^\\dagger = \\begin{bmatrix}
+    1 & 0 & 0 & 0 \\\\
+    0 & 0 & -i & 0 \\\\
+    0 & -i & 0 & 0 \\\\
+    0 & 0 & 0 & 1
+    \\end{bmatrix}.
+```
+"""
+iswap_dagger() = Operator(
+    Complex.(
+        [[1.0, 0.0, 0.0, 0.0] [0.0, 0.0, -im, 0.0] [0.0, -im, 0.0, 0.0] [0.0, 0.0, 0.0, 1.0]],
+    ),
 )
 
 """
@@ -1037,7 +1037,7 @@ Underlying data Matrix{Complex}:
 ```
 """
 function get_inverse(gate::Gate)
-    if ishermitian(get_operator(gate))
+    if is_hermitian(get_operator(gate))
         return gate
     end
     sym = gate.instruction_symbol

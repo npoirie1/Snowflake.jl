@@ -114,7 +114,7 @@ Base.adjoint(x::Bra) = Ket(adjoint(x.data))
 Base.adjoint(A::Operator) = Operator(adjoint(A.data))
 
 """
-    ishermitian(A::Operator)
+    is_hermitian(A::Operator)
 
 Determine if Operator `A` is Hermitian (i.e. self-adjoint).
 
@@ -127,7 +127,7 @@ Underlying data Matrix{Complex}:
 0.0 + 1.0im    0.0 + 0.0im
 
 
-julia> ishermitian(Y)
+julia> is_hermitian(Y)
 true
 
 julia> P = sigma_p()
@@ -137,12 +137,12 @@ Underlying data Matrix{Complex}:
 0.0 + 0.0im    0.0 + 0.0im
 
 
-julia> ishermitian(P)
+julia> is_hermitian(P)
 false
 
 ```
 """
-ishermitian(A::Operator) = LinearAlgebra.ishermitian(A.data)
+is_hermitian(A::Operator) = LinearAlgebra.ishermitian(A.data)
 
 Base.:*(alpha::Number, x::Ket) = Ket(alpha * x.data)
 Base.:isapprox(x::Ket, y::Ket; atol::Real=1.0e-6) = isapprox(x.data, y.data, atol=atol)
@@ -659,6 +659,138 @@ function normalize!(x::Ket)
     a = LinearAlgebra.norm(x.data,2)
     x = 1.0/a*x
     return x
+end
+
+"""
+    get_measurement_probabilities(x::Ket, [target_bodies::Vector{<:Integer},
+        hspace_size_per_body::Integer=2])
+
+Returns a vector listing the measurement probabilities of the `target_bodies` of `Ket` `x`.
+
+The Hilbert space size per body can be specified by providing a value for the
+`hspace_size_per_body` argument. If only `x` is provided, the probabilities are provided for
+all the bodies.
+
+The measurement probabilities are listed from the smallest to the largest computational
+basis state. For instance, for a 2-qubit `Ket`, the probabilities are listed for 00, 01, 10,
+and 11.
+# Examples
+The following example constructs a `Ket`, where the probability of measuring 00 is 50% and
+the probability of measuring 10 is also 50%.
+```jldoctest get_measurement_probabilities
+julia> ψ = 1/sqrt(2)*Ket([1, 0, 1, 0]);
+
+julia> print(ψ)
+4-element Ket:
+0.7071067811865475 + 0.0im
+0.0 + 0.0im
+0.7071067811865475 + 0.0im
+0.0 + 0.0im
+
+julia> get_measurement_probabilities(ψ)
+4-element Vector{Float64}:
+ 0.4999999999999999
+ 0.0
+ 0.4999999999999999
+ 0.0
+
+```
+
+For the same `Ket`, the probability of measuring qubit 2 and finding 0 is 100%.
+```jldoctest get_measurement_probabilities
+julia> target_qubit = [2];
+
+julia> get_measurement_probabilities(ψ, target_qubit)
+2-element Vector{Float64}:
+ 0.9999999999999998
+ 0.0
+
+```
+"""
+function get_measurement_probabilities(x::Ket)
+    return real.(x .* x)
+end
+
+function get_measurement_probabilities(x::Ket, target_bodies::Vector{<:Integer},
+    hspace_size_per_body::Integer=2)
+
+    amplitudes = real.(x .* x)
+    num_amplitudes = length(amplitudes)
+    num_target_amplitudes = hspace_size_per_body^length(target_bodies)
+    if num_target_amplitudes == num_amplitudes
+        return get_measurement_probabilities(x)
+    else
+        num_bodies = get_num_bodies(x, hspace_size_per_body)
+        remaining_bodies = [x for x ∈ 1:num_bodies if x ∉ target_bodies]
+        target_amplitudes = Vector{Float64}(undef, num_target_amplitudes)
+        num_summed_amplitudes = hspace_size_per_body^length(remaining_bodies)
+        for i_target_amplitude in 0:num_target_amplitudes-1
+            sum = 0
+            for i_summed_amplitude in 0:num_summed_amplitudes-1
+                ket_index = get_ket_index(target_bodies, remaining_bodies,
+                    hspace_size_per_body, i_target_amplitude, i_summed_amplitude)
+                sum += amplitudes[ket_index]
+            end
+            target_amplitudes[i_target_amplitude+1] = sum
+        end
+        return target_amplitudes
+    end
+end
+
+function get_ket_index(target_bodies::Vector{<:Integer},
+    remaining_bodies::Vector{<:Integer},
+    hspace_size_per_body::Integer, target_index::Integer,
+    remainder_index::Integer)
+
+    target_symbols = change_number_base(target_index, hspace_size_per_body,
+        length(target_bodies))
+    remainder_symbols = change_number_base(remainder_index, hspace_size_per_body,
+        length(remaining_bodies))
+    num_symbols = length(target_bodies)+length(remaining_bodies)
+    combined_symbols = Vector{Int}(undef, num_symbols)
+    for (i_target, target) in enumerate(target_bodies)
+        combined_symbols[target] = target_symbols[i_target]
+    end
+    for (i_remaining, remaining) in enumerate(remaining_bodies)
+        combined_symbols[remaining] = remainder_symbols[i_remaining]
+    end
+    decimal = change_to_decimal_integer(combined_symbols, hspace_size_per_body)
+    return decimal+1
+end
+
+function change_number_base(decimal::Integer, base::Integer, num_symbols::Integer)
+    throw_if_number_base_cannot_be_changed(decimal, base, num_symbols)
+    dividend = decimal
+    symbols = zeros(Int, num_symbols)
+    count = 0
+    while dividend != 0
+        (dividend, remainder) = fldmod(dividend, base)
+        symbols[end-count] = remainder
+        count += 1
+    end
+    return symbols
+end
+
+function throw_if_number_base_cannot_be_changed(decimal::Integer, base::Integer,
+    num_symbols::Integer)
+    
+    if decimal < 0
+        throw(ErrorException("the decimal cannot be negative"))
+    elseif decimal >= base^num_symbols
+        min_num_symbols = Int(ceil(log2(decimal+1)/log2(base)))
+        throw(ErrorException(
+            "the decimal $decimal needs at least $min_num_symbols symbols"))
+    end
+end
+
+function change_to_decimal_integer(symbols::Vector{<:Integer}, base::Integer)
+    decimal = 0
+    num_symbols = length(symbols)
+    for (i_symbol, digit) in enumerate(symbols)
+        power = num_symbols-i_symbol
+        decimal += digit*base^power
+    end
+    return decimal
 end
 
 """
